@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Real-time community infrastructure monitoring dashboard for Ogden, AR — tracking power grid, water systems, health services, agriculture, and federated AI with privacy-first design.">
+  <meta name="theme-color" content="#0a0e17">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Rural Smart City Dashboard — Ogden, AR">
+  <meta property="og:description" content="Privacy-first AI infrastructure monitor for rural community services: power, water, health, agriculture, emergency response, and federated learning.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://qwsbtd.github.io/Rural-Smart-City-Dashboard/">
+  <meta property="og:image" content="https://qwsbtd.github.io/Rural-Smart-City-Dashboard/og-image.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Rural Smart City Dashboard — Ogden, AR">
+  <meta name="twitter:description" content="Privacy-first AI infrastructure monitor for rural community services.">
+
+  <!-- Favicon (inline SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0e17'/><text x='50' y='68' font-size='50' font-family='system-ui' font-weight='bold' text-anchor='middle' fill='%2334d399'>RS</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0e17'/><text x='50' y='68' font-size='50' font-family='system-ui' font-weight='bold' text-anchor='middle' fill='%2334d399'>RS</text></svg>">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <title>Rural Smart City Dashboard — Ogden, AR</title>
+  <style>
+    /* ── Reset & Base ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:   #0a0e17;
+      --bg-card:      #111827;
+      --bg-card-alt:  #1a2234;
+      --border:       #1e2a3a;
+      --text-primary: #e2e8f0;
+      --text-muted:   #8892a4;
+      --accent-green: #34d399;
+      --accent-blue:  #60a5fa;
+      --accent-amber: #fbbf24;
+      --accent-red:   #f87171;
+      --accent-purple:#a78bfa;
+      --accent-cyan:  #22d3ee;
+      --radius:       8px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, #0f1629 0%, #111827 100%);
+    }
+
+    .header-left { display: flex; align-items: center; gap: 14px; }
+
+    .logo {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: #0a0e17; flex-shrink: 0;
+    }
+
+    .header-title h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-title p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 6px; font-size: 12px;
+      color: var(--accent-green); background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.2); padding: 4px 12px; border-radius: 20px;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent-green); animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(52,211,153,0); }
+    }
+
+    #clock {
+      font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums;
+      color: var(--text-primary); background: var(--bg-card-alt);
+      padding: 6px 14px; border-radius: var(--radius);
+      border: 1px solid var(--border); min-width: 200px; text-align: center;
+    }
+
+    /* ── Dashboard Grid ──────────────────────────────────── */
+    .dashboard {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; padding: 20px 24px 32px; max-width: 1440px; margin: 0 auto;
+    }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden;
+    }
+
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+
+    .card-grid::before    { background: linear-gradient(90deg, var(--accent-green), var(--accent-blue)); }
+    .card-crop::before    { background: linear-gradient(90deg, var(--accent-amber), var(--accent-green)); }
+    .card-nodes::before   { background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); }
+    .card-fed::before     { background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan)); }
+    .card-summary::before { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green)); }
+
+    .card-summary { grid-column: 1 / -1; }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+
+    .card-header h2 {
+      font-size: 14px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted);
+    }
+
+    .card-header .badge {
+      font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500;
+    }
+
+    .badge-live {
+      background: rgba(52,211,153,0.1); color: var(--accent-green);
+      border: 1px solid rgba(52,211,153,0.25);
+    }
+
+    .badge-training {
+      background: rgba(167,139,250,0.1); color: var(--accent-purple);
+      border: 1px solid rgba(167,139,250,0.25);
+    }
+
+    /* ── Grid Chart ──────────────────────────────────────── */
+    .chart-container { position: relative; width: 100%; height: 220px; }
+
+    #gridChart { width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+    .chart-tooltip {
+      position: absolute; display: none; background: #1e293b; border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 12px; font-size: 12px; pointer-events: none;
+      z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.4); white-space: nowrap;
+    }
+
+    .chart-tooltip .tt-label { color: var(--text-muted); font-size: 10px; margin-bottom: 4px; }
+    .chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .chart-tooltip .tt-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .chart-tooltip .tt-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .chart-legend { display: flex; gap: 20px; margin-top: 12px; }
+    .chart-legend span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .chart-stats { display: flex; gap: 24px; margin-top: 12px; }
+    .chart-stat { display: flex; flex-direction: column; }
+    .chart-stat-value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .chart-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+
+    /* ── Crop Yield Table ────────────────────────────────── */
+    .crop-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .crop-table thead th {
+      text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
+      color: var(--text-muted); font-weight: 500; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .crop-table tbody td {
+      padding: 10px; border-bottom: 1px solid rgba(30,42,58,0.5);
+      font-variant-numeric: tabular-nums; transition: background 0.3s; cursor: pointer;
+    }
+    .crop-table tbody tr:hover td { background: rgba(96,165,250,0.08); }
+    .crop-table tbody tr.flash td { background: rgba(52,211,153,0.08); }
+
+    .yield-bar-cell { position: relative; }
+    .yield-bar { height: 6px; border-radius: 3px; background: var(--accent-green); transition: width 0.8s ease; opacity: 0.7; }
+    .trend-up   { color: var(--accent-green); }
+    .trend-down { color: var(--accent-red); }
+    .trend-flat { color: var(--text-muted); }
+
+    /* ── Service Nodes ───────────────────────────────────── */
+    .nodes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+    .node-card {
+      background: var(--bg-card-alt); border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px 12px; text-align: center;
+      transition: border-color 0.4s, box-shadow 0.4s, transform 0.2s;
+      position: relative; cursor: pointer;
+    }
+
+    .node-card:hover { transform: translateY(-2px); }
+    .node-card.online { border-color: rgba(52,211,153,0.3); }
+    .node-card.degraded { border-color: rgba(251,191,36,0.4); box-shadow: 0 0 12px rgba(251,191,36,0.08); }
+    .node-card.offline {
+      border-color: rgba(248,113,113,0.4); box-shadow: 0 0 12px rgba(248,113,113,0.1);
+      animation: offline-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes offline-pulse {
+      0%, 100% { box-shadow: 0 0 12px rgba(248,113,113,0.1); }
+      50% { box-shadow: 0 0 20px rgba(248,113,113,0.2); }
+    }
+
+    .node-icon { font-size: 22px; margin-bottom: 6px; }
+    .node-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+    .node-status { font-size: 11px; font-weight: 500; }
+    .node-card.online .node-status  { color: var(--accent-green); }
+    .node-card.degraded .node-status { color: var(--accent-amber); }
+    .node-card.offline .node-status  { color: var(--accent-red); }
+    .node-latency { font-size: 10px; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .node-uptime { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+    .nodes-summary {
+      display: flex; gap: 16px; margin-top: 14px;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .nodes-summary-item { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .nodes-summary-item .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    /* ── Federated Learning Panel ────────────────────────── */
+    .fed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+    .fed-metric {
+      background: var(--bg-card-alt); border-radius: 6px; padding: 14px;
+      border: 1px solid var(--border); cursor: pointer; transition: border-color 0.3s, transform 0.2s;
+    }
+    .fed-metric:hover { border-color: rgba(167,139,250,0.4); transform: translateY(-1px); }
+
+    .fed-metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+    .fed-metric-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .fed-metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .fed-progress { margin-bottom: 16px; }
+    .fed-progress-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .fed-progress-header span:first-child { color: var(--text-muted); }
+    .fed-progress-header span:last-child { color: var(--accent-purple); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .fed-progress-bar { width: 100%; height: 8px; background: var(--bg-card-alt); border-radius: 4px; overflow: hidden; }
+    .fed-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan)); transition: width 1s ease; }
+
+    .fed-log {
+      background: var(--bg-card-alt); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px; max-height: 120px; overflow-y: auto;
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 11px; line-height: 1.7;
+    }
+    .fed-log::-webkit-scrollbar { width: 4px; }
+    .fed-log::-webkit-scrollbar-track { background: transparent; }
+    .fed-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    .fed-log-entry { color: var(--text-muted); }
+    .fed-log-entry .time { color: var(--accent-purple); }
+    .fed-log-entry .ok { color: var(--accent-green); }
+    .fed-log-entry .warn { color: var(--accent-amber); }
+
+    /* ── Summary Bar ─────────────────────────────────────── */
+    .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+    .summary-item {
+      text-align: center; padding: 12px 8px; background: var(--bg-card-alt);
+      border-radius: 6px; border: 1px solid var(--border);
+      cursor: pointer; transition: border-color 0.3s, transform 0.2s;
+    }
+    .summary-item:hover { border-color: rgba(96,165,250,0.4); transform: translateY(-2px); }
+
+    .summary-value { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .summary-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-top: 4px; }
+
+    /* ── Modal ────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 100; backdrop-filter: blur(4px);
+      justify-content: center; align-items: center; padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; width: 100%; max-width: 640px; max-height: 85vh;
+      overflow-y: auto; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      animation: modal-in 0.25s ease;
+    }
+
+    @keyframes modal-in {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 { font-size: 16px; font-weight: 600; }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-card-alt); color: var(--text-muted); cursor: pointer;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .modal-close:hover { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
+
+    .modal-body { padding: 20px 24px; }
+    .modal-body h4 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+    .modal-body h4:first-child { margin-top: 0; }
+    .modal-body p { font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+    .detail-item {
+      background: var(--bg-card-alt); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px;
+    }
+    .detail-item-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-item-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+    .detail-bar { margin: 8px 0; }
+    .detail-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+    .detail-bar-track { height: 6px; background: var(--bg-card-alt); border-radius: 3px; overflow: hidden; }
+    .detail-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+    .detail-history {
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 11px;
+      background: var(--bg-card-alt); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px; max-height: 150px;
+      overflow-y: auto; line-height: 1.7;
+    }
+
+    .detail-tag {
+      display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin: 2px 4px 2px 0;
+    }
+    .tag-green { background: rgba(52,211,153,0.12); color: var(--accent-green); }
+    .tag-amber { background: rgba(251,191,36,0.12); color: var(--accent-amber); }
+    .tag-red   { background: rgba(248,113,113,0.12); color: var(--accent-red); }
+    .tag-blue  { background: rgba(96,165,250,0.12); color: var(--accent-blue); }
+    .tag-purple{ background: rgba(167,139,250,0.12); color: var(--accent-purple); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    .footer {
+      text-align: center; padding: 16px; font-size: 12px;
+      color: var(--text-muted); border-top: 1px solid var(--border);
+    }
+    .footer a { color: var(--accent-blue); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .dashboard { grid-template-columns: 1fr; padding: 12px; }
+      .card-summary { grid-column: auto; }
+      .summary-grid { grid-template-columns: repeat(3, 1fr); }
+      .nodes-grid { grid-template-columns: repeat(2, 1fr); }
+      .header { flex-direction: column; gap: 10px; align-items: flex-start; }
+      .header-right { width: 100%; justify-content: space-between; }
+    }
+    @media (max-width: 500px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .fed-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Accessibility ────────────────────────────────────── */
+    .skip-link {
+      position: absolute; top: -40px; left: 0; padding: 8px 16px;
+      background: var(--accent-green); color: #0a0e17; font-weight: 600;
+      font-size: 14px; z-index: 200; border-radius: 0 0 6px 0;
+      transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
+
+    *:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 2px;
+    }
+
+    .modal-close:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 2px;
+    }
+
+    .node-card:focus-visible, .fed-metric:focus-visible, .summary-item:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 2px;
+    }
+
+    /* ── Toast Notifications ──────────────────────────────── */
+    .toast-container {
+      position: fixed; top: 16px; right: 16px; z-index: 150;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto; display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: toast-in 0.3s ease, toast-out 0.3s ease 4.7s forwards;
+      max-width: 340px;
+    }
+    .toast-warn {
+      background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); color: var(--accent-amber);
+    }
+    .toast-error {
+      background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--accent-red);
+    }
+    .toast-ok {
+      background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); color: var(--accent-green);
+    }
+    .toast-icon { font-size: 16px; flex-shrink: 0; }
+
+    @keyframes toast-in { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateX(40px); } }
+
+    /* ── Loading Skeleton ─────────────────────────────────── */
+    .skeleton-pulse {
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes skeleton-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Time Range Selector ──────────────────────────────── */
+    .time-range-group {
+      display: flex; gap: 4px; margin-left: auto;
+    }
+    .time-range-btn {
+      padding: 2px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .time-range-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+    .time-range-btn.active {
+      background: rgba(96,165,250,0.15); border-color: var(--accent-blue); color: var(--accent-blue); font-weight: 600;
+    }
+
+    /* ── Export Button ─────────────────────────────────────── */
+    .export-btn {
+      padding: 4px 12px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit;
+      transition: all 0.2s; margin-left: 8px;
+    }
+    .export-btn:hover { border-color: var(--accent-green); color: var(--accent-green); }
+
+    /* ── Print ────────────────────────────────────────────── */
+    @media print {
+      body { background: #fff; color: #000; }
+      .header { background: #fff; border-bottom: 2px solid #000; }
+      .header-title h1 { color: #000; }
+      .header-title p, .header-right { color: #333; }
+      .card { background: #fff; border: 1px solid #ccc; break-inside: avoid; }
+      .card::before { display: none; }
+      .card-header h2 { color: #333; }
+      .node-card { background: #f9f9f9; border: 1px solid #ccc; }
+      .node-card.online .node-status { color: #059669; }
+      .node-card.degraded .node-status { color: #d97706; }
+      .node-card.offline .node-status { color: #dc2626; }
+      .modal-overlay, .toast-container, .skip-link, .time-range-group, .export-btn { display: none !important; }
+      .fed-log { max-height: none; overflow: visible; }
+      .footer { color: #666; border-top: 1px solid #ccc; }
+      .footer a { color: #2563eb; }
+      .summary-value { color: #000 !important; }
+      .chart-stat-value { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <a href="#main-dashboard" class="skip-link">Skip to dashboard</a>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Header -->
+  <header class="header" role="banner">
+    <div class="header-left">
+      <div class="logo">RS</div>
+      <div class="header-title">
+        <h1>Rural Smart City Dashboard</h1>
+        <p>Ogden, AR &mdash; Community Infrastructure Monitor</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-badge" role="status" aria-label="All systems active"><span class="status-dot" aria-hidden="true"></span> Systems Active</div>
+      <time id="clock" aria-live="off" aria-label="Current time">--:--:-- --</time>
+    </div>
+  </header>
+
+  <!-- Dashboard -->
+  <main class="dashboard" id="main-dashboard" role="main">
+
+    <!-- Grid Efficiency Chart -->
+    <section class="card card-grid" aria-label="Grid Efficiency Chart">
+      <div class="card-header">
+        <h2>Grid Efficiency</h2>
+        <div class="time-range-group" role="group" aria-label="Time range">
+          <button class="time-range-btn active" data-range="90" aria-pressed="true">90s</button>
+          <button class="time-range-btn" data-range="300" aria-pressed="false">5m</button>
+          <button class="time-range-btn" data-range="900" aria-pressed="false">15m</button>
+        </div>
+        <span class="badge badge-live">LIVE</span>
+      </div>
+      <div class="chart-container">
+        <canvas id="gridChart" role="img" aria-label="Grid efficiency and load time-series chart. Current values shown below."></canvas>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+      <div class="chart-stats" aria-live="polite" aria-atomic="false">
+        <div class="chart-stat">
+          <span class="chart-stat-value" id="gridEfficiency" style="color:var(--accent-green)" aria-label="Current efficiency">--</span>
+          <span class="chart-stat-label">Current Efficiency</span>
+        </div>
+        <div class="chart-stat">
+          <span class="chart-stat-value" id="gridLoad" style="color:var(--accent-blue)" aria-label="Grid load">--</span>
+          <span class="chart-stat-label">Grid Load</span>
+        </div>
+        <div class="chart-stat">
+          <span class="chart-stat-value" id="gridPeak" style="color:var(--accent-amber)" aria-label="Peak today">--</span>
+          <span class="chart-stat-label">Peak Today</span>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:var(--accent-green)"></span> Efficiency %</span>
+        <span><span class="legend-dot" style="background:var(--accent-blue)"></span> Load kW</span>
+        <span><span class="legend-dot" style="background:rgba(251,191,36,0.5)"></span> Threshold</span>
+      </div>
+    </section>
+
+    <!-- Crop Yield Table -->
+    <section class="card card-crop" aria-label="Crop Yield Monitor">
+      <div class="card-header">
+        <h2>Crop Yield Monitor</h2>
+        <span class="badge badge-live">LIVE</span>
+      </div>
+      <table class="crop-table" aria-label="Live crop yield readings">
+        <thead>
+          <tr><th scope="col">Crop</th><th scope="col">Yield (bu/ac)</th><th scope="col">Trend</th><th scope="col">Soil pH</th><th scope="col">Moisture</th><th scope="col">Projection</th></tr>
+        </thead>
+        <tbody id="cropTableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- Service Node Monitor -->
+    <section class="card card-nodes" aria-label="Service Node Monitor">
+      <div class="card-header">
+        <h2>Service Node Monitor</h2>
+        <span class="badge badge-live">LIVE</span>
+      </div>
+      <div class="nodes-grid" id="nodesGrid" role="list" aria-label="Service nodes"></div>
+      <div class="nodes-summary" id="nodesSummary" aria-live="polite"></div>
+    </section>
+
+    <!-- Federated Learning Panel -->
+    <section class="card card-fed" aria-label="Federated Learning Status">
+      <div class="card-header">
+        <h2>Federated Learning</h2>
+        <span class="badge badge-training">TRAINING</span>
+      </div>
+      <div class="fed-grid">
+        <div class="fed-metric" role="button" tabindex="0" onclick="Modal.showFedDetail('round')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showFedDetail('round')}" aria-label="Training round details">
+          <div class="fed-metric-label">Training Round</div>
+          <div class="fed-metric-value" id="fedRound" style="color:var(--accent-purple)">--</div>
+          <div class="fed-metric-sub" id="fedRoundSub">--</div>
+        </div>
+        <div class="fed-metric" role="button" tabindex="0" onclick="Modal.showFedDetail('nodes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showFedDetail('nodes')}" aria-label="Active nodes details">
+          <div class="fed-metric-label">Active Nodes</div>
+          <div class="fed-metric-value" id="fedNodes" style="color:var(--accent-cyan)">--</div>
+          <div class="fed-metric-sub" id="fedNodesSub">--</div>
+        </div>
+        <div class="fed-metric" role="button" tabindex="0" onclick="Modal.showFedDetail('accuracy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showFedDetail('accuracy')}" aria-label="Model accuracy details">
+          <div class="fed-metric-label">Model Accuracy</div>
+          <div class="fed-metric-value" id="fedAccuracy" style="color:var(--accent-green)">--</div>
+          <div class="fed-metric-sub" id="fedAccuracySub">--</div>
+        </div>
+        <div class="fed-metric" role="button" tabindex="0" onclick="Modal.showFedDetail('privacy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showFedDetail('privacy')}" aria-label="Privacy budget details">
+          <div class="fed-metric-label">Privacy Budget</div>
+          <div class="fed-metric-value" id="fedPrivacy" style="color:var(--accent-amber)">--</div>
+          <div class="fed-metric-sub">Differential privacy &epsilon;</div>
+        </div>
+      </div>
+      <div class="fed-progress">
+        <div class="fed-progress-header">
+          <span>Round Progress</span>
+          <span id="fedProgressPct">0%</span>
+        </div>
+        <div class="fed-progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="fedProgressBar">
+          <div class="fed-progress-fill" id="fedProgressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="fed-log" id="fedLog" role="log" aria-label="Federated learning event log" aria-live="off"></div>
+    </section>
+
+    <!-- Summary Bar -->
+    <section class="card card-summary" aria-label="Initiative Metrics Summary">
+      <div class="card-header">
+        <h2>Initiative Metrics</h2>
+        <button class="export-btn" onclick="exportDashboardCSV()" aria-label="Export dashboard data as CSV">Export CSV</button>
+        <span class="badge badge-live">LIVE</span>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-item" role="button" tabindex="0" onclick="Modal.showSummaryDetail('nodes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showSummaryDetail('nodes')}" aria-label="Total nodes detail">
+          <div class="summary-value" id="sumNodes" style="color:var(--accent-blue)">--</div>
+          <div class="summary-label">Total Nodes</div>
+        </div>
+        <div class="summary-item" role="button" tabindex="0" onclick="Modal.showSummaryDetail('uptime')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showSummaryDetail('uptime')}" aria-label="Average uptime detail">
+          <div class="summary-value" id="sumUptime" style="color:var(--accent-green)">--</div>
+          <div class="summary-label">Avg Uptime</div>
+        </div>
+        <div class="summary-item" role="button" tabindex="0" onclick="Modal.showSummaryDetail('data')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showSummaryDetail('data')}" aria-label="Data points detail">
+          <div class="summary-value" id="sumData" style="color:var(--accent-purple)">--</div>
+          <div class="summary-label">Data Points</div>
+        </div>
+        <div class="summary-item" role="button" tabindex="0" onclick="Modal.showSummaryDetail('privacy')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showSummaryDetail('privacy')}" aria-label="Privacy score detail">
+          <div class="summary-value" id="sumPrivacy" style="color:var(--accent-amber)">--</div>
+          <div class="summary-label">Privacy Score</div>
+        </div>
+        <div class="summary-item" role="button" tabindex="0" onclick="Modal.showSummaryDetail('alerts')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Modal.showSummaryDetail('alerts')}" aria-label="Active alerts detail">
+          <div class="summary-value" id="sumAlerts" style="color:var(--accent-red)">--</div>
+          <div class="summary-label">Active Alerts</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="Modal.close(event)" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Detail View</h3>
+        <button class="modal-close" onclick="Modal.close()" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer class="footer" role="contentinfo">
+    Rural Smart City Initiative &mdash; Ogden, AR &mdash;
+    <a href="https://github.com/qwsbtd/Rural-Smart-City-Dashboard" target="_blank" rel="noopener">GitHub</a>
+    &middot; Zero dependencies &middot; Privacy-first AI infrastructure
+  </footer>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════
+       MODAL SYSTEM
+       ═══════════════════════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════
+       TOAST NOTIFICATION SYSTEM
+       ═══════════════════════════════════════════════════════ */
+    var Toast = {
+      container: document.getElementById('toastContainer'),
+      show: function(msg, type) {
+        type = type || 'ok';
+        var icons = { ok: '\u2713', warn: '\u26A0', error: '\u2716' };
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        toast.innerHTML = '<span class="toast-icon">' + (icons[type] || '') + '</span> ' + msg;
+        this.container.appendChild(toast);
+        setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 5000);
+      }
+    };
+
+    var Modal = {
+      el: document.getElementById('modalOverlay'),
+      title: document.getElementById('modalTitle'),
+      body: document.getElementById('modalBody'),
+      _previousFocus: null,
+
+      open: function(title, html) {
+        this._previousFocus = document.activeElement;
+        this.title.textContent = title;
+        this.body.innerHTML = html;
+        this.el.classList.add('active');
+        var closeBtn = this.el.querySelector('.modal-close');
+        if (closeBtn) closeBtn.focus();
+      },
+
+      close: function(e) {
+        if (e && e.target !== Modal.el) return;
+        Modal.el.classList.remove('active');
+        if (Modal._previousFocus) Modal._previousFocus.focus();
+      },
+
+      _trapFocus: function(e) {
+        if (!Modal.el.classList.contains('active')) return;
+        var modal = document.getElementById('modal');
+        var focusable = modal.querySelectorAll('button, [href], [tabindex]:not([tabindex="-1"])');
+        if (focusable.length === 0) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      },
+
+      showCropDetail: function(idx) {
+        var c = CropData.crops[idx];
+        var hist = CropData.history[idx];
+        var histHtml = hist.map(function(h) {
+          return '<span style="color:var(--accent-purple)">[' + h.time + ']</span> ' +
+            'Yield: <span style="color:var(--accent-green)">' + h.yield + '</span> bu/ac &middot; ' +
+            'pH: ' + h.pH + ' &middot; Moisture: ' + h.moisture + '%';
+        }).join('<br>');
+
+        var optPh = c.name === 'Rice' ? '5.5 – 6.5' : '6.0 – 7.0';
+        var optMoisture = c.name === 'Rice' ? '55 – 75%' : '30 – 50%';
+
+        Modal.open(c.name + ' — Detail View',
+          '<h4>Current Readings</h4>' +
+          '<div class="detail-grid">' +
+            '<div class="detail-item"><div class="detail-item-label">Yield</div><div class="detail-item-value" style="color:var(--accent-green)">' + c.yield.toFixed(1) + ' <span style="font-size:12px;color:var(--text-muted)">bu/ac</span></div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Soil pH</div><div class="detail-item-value" style="color:var(--accent-blue)">' + c.pH.toFixed(2) + '</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Moisture</div><div class="detail-item-value" style="color:var(--accent-cyan)">' + c.moisture.toFixed(1) + '%</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Season Status</div><div class="detail-item-value" style="font-size:14px;color:var(--accent-amber)">Growing</div></div>' +
+          '</div>' +
+          '<h4>Optimal Ranges</h4>' +
+          '<div class="detail-bar">' +
+            '<div class="detail-bar-label"><span>Soil pH (' + c.pH.toFixed(1) + ')</span><span>Target: ' + optPh + '</span></div>' +
+            '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + (c.pH / 8 * 100) + '%;background:var(--accent-blue)"></div></div>' +
+          '</div>' +
+          '<div class="detail-bar">' +
+            '<div class="detail-bar-label"><span>Moisture (' + c.moisture.toFixed(0) + '%)</span><span>Target: ' + optMoisture + '</span></div>' +
+            '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + c.moisture + '%;background:var(--accent-cyan)"></div></div>' +
+          '</div>' +
+          '<h4>AI Recommendations</h4>' +
+          '<p>' + CropData.getRecommendation(c) + '</p>' +
+          '<h4>Recent History</h4>' +
+          '<div class="detail-history">' + histHtml + '</div>'
+        );
+      },
+
+      showNodeDetail: function(idx) {
+        var n = NodeData.nodes[idx];
+        var p = NodeData.profiles[idx];
+        var hist = NodeData.history[idx];
+        var histHtml = hist.map(function(h) {
+          var cls = h.status === 'online' ? 'ok' : h.status === 'degraded' ? 'warn' : 'warn';
+          return '<span style="color:var(--accent-purple)">[' + h.time + ']</span> ' +
+            '<span class="' + cls + '">' + h.status.toUpperCase() + '</span> &middot; ' +
+            h.latency + ' ms';
+        }).join('<br>');
+
+        var statusColor = n.status === 'online' ? '--accent-green' : n.status === 'degraded' ? '--accent-amber' : '--accent-red';
+        var priorityTag = p.priority === 'Critical' ? 'tag-red' : 'tag-blue';
+        var tags = '';
+        if (n.status === 'offline') tags += '<span class="detail-tag tag-red">OFFLINE — Investigate</span>';
+        if (n.status === 'degraded') tags += '<span class="detail-tag tag-amber">DEGRADED — Monitor</span>';
+        if (n.latency > 100) tags += '<span class="detail-tag tag-amber">HIGH LATENCY</span>';
+        if (n.uptime < 97) tags += '<span class="detail-tag tag-red">LOW UPTIME</span>';
+        if (n.status === 'online' && n.latency < 50) tags += '<span class="detail-tag tag-green">HEALTHY</span>';
+        tags += '<span class="detail-tag ' + priorityTag + '">' + p.priority + ' Priority</span>';
+        tags += '<span class="detail-tag tag-purple">' + n.id + '</span>';
+
+        var sensorsHtml = p.sensors.map(function(s) {
+          return '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:8px">' +
+            '<span style="color:var(--accent-green);font-size:10px">&#9679;</span> ' + s + '</div>';
+        }).join('');
+
+        var aiHtml = p.aiModels.map(function(m) {
+          return '<div style="padding:8px 10px;margin-bottom:8px;background:var(--bg-card-alt);border:1px solid var(--border);border-radius:6px;font-size:13px;line-height:1.5">' + m + '</div>';
+        }).join('');
+
+        var depsHtml = p.dependencies.map(function(d) {
+          return '<span class="detail-tag tag-blue">' + d + '</span>';
+        }).join(' ');
+
+        var risksHtml = p.riskFactors.map(function(r) {
+          return '<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:start;gap:8px">' +
+            '<span style="color:var(--accent-amber);font-size:10px;margin-top:4px">&#9650;</span> ' + r + '</div>';
+        }).join('');
+
+        Modal.open(n.name + ' — Node Detail',
+          '<div style="margin-bottom:12px">' + tags + '</div>' +
+
+          '<div class="detail-grid">' +
+            '<div class="detail-item"><div class="detail-item-label">Status</div><div class="detail-item-value" style="color:var(' + statusColor + ')">' + n.status.toUpperCase() + '</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Latency</div><div class="detail-item-value" style="color:var(--accent-blue)">' + n.latency + ' <span style="font-size:12px;color:var(--text-muted)">ms</span></div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Uptime</div><div class="detail-item-value" style="color:var(--accent-green)">' + n.uptime.toFixed(2) + '%</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Target Uptime</div><div class="detail-item-value" style="font-size:16px;color:var(--text-primary)">' + p.uptimeTarget + '</div></div>' +
+          '</div>' +
+
+          '<h4>Deployment Info</h4>' +
+          '<div style="font-size:13px;line-height:1.8;margin-bottom:4px">' +
+            '<strong style="color:var(--text-muted)">Location:</strong> ' + p.location + '<br>' +
+            '<strong style="color:var(--text-muted)">Hardware:</strong> ' + p.hardware + '<br>' +
+            '<strong style="color:var(--text-muted)">Deployed:</strong> ' + p.deployed +
+          '</div>' +
+
+          '<h4>Description</h4>' +
+          '<p>' + p.desc + '</p>' +
+
+          '<h4>Live Sensors (' + p.sensors.length + ')</h4>' +
+          '<div style="margin-bottom:4px">' + sensorsHtml + '</div>' +
+
+          '<h4>AI Models Running on This Node</h4>' + aiHtml +
+
+          '<h4>Latency</h4>' +
+          '<div class="detail-bar">' +
+            '<div class="detail-bar-label"><span>Current: ' + n.latency + ' ms</span><span>Threshold: 100 ms</span></div>' +
+            '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + Math.min(100, n.latency) + '%;background:' + (n.latency > 100 ? 'var(--accent-red)' : n.latency > 60 ? 'var(--accent-amber)' : 'var(--accent-green)') + '"></div></div>' +
+          '</div>' +
+
+          '<h4>Dependencies</h4>' +
+          '<div style="margin-bottom:8px">' + depsHtml + '</div>' +
+
+          '<h4>Risk Factors</h4>' +
+          '<div style="margin-bottom:4px">' + risksHtml + '</div>' +
+
+          '<h4>Privacy & Data Governance</h4>' +
+          '<p style="background:var(--bg-card-alt);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;line-height:1.6">' + p.privacyNotes + '</p>' +
+
+          '<h4>Community Impact</h4>' +
+          '<p style="background:var(--bg-card-alt);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:12px;font-size:13px;line-height:1.6">' + p.community + '</p>' +
+
+          '<h4>Status History</h4>' +
+          '<div class="detail-history">' + (histHtml || '<span style="color:var(--text-muted)">Collecting data...</span>') + '</div>'
+        );
+      },
+
+      showFedDetail: function(type) {
+        var s = FedData.state;
+        var content = '';
+        if (type === 'round') {
+          content =
+            '<h4>Training Round Details</h4>' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-item-label">Current Round</div><div class="detail-item-value" style="color:var(--accent-purple)">' + s.round + '</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Target Rounds</div><div class="detail-item-value" style="color:var(--text-primary)">' + s.maxRounds + '</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Avg Round Time</div><div class="detail-item-value" style="color:var(--accent-cyan)">~12s</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Convergence</div><div class="detail-item-value" style="font-size:14px;color:var(--accent-green)">On Track</div></div>' +
+            '</div>' +
+            '<h4>How Federated Rounds Work</h4>' +
+            '<p>Each round, participating nodes train a local model on their private data. Only model weight updates (gradients) are sent to the aggregator — <strong>raw data never leaves the node</strong>. The aggregator merges updates using secure aggregation, producing an improved global model that is sent back to all nodes.</p>' +
+            '<p>This process repeats until the model converges or the privacy budget is exhausted.</p>';
+        } else if (type === 'nodes') {
+          content =
+            '<h4>Node Participation</h4>' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-item-label">Active</div><div class="detail-item-value" style="color:var(--accent-cyan)">' + s.activeNodes + '</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Total</div><div class="detail-item-value" style="color:var(--text-primary)">' + s.totalNodes + '</div></div>' +
+            '</div>' +
+            '<h4>Why Nodes May Be Inactive</h4>' +
+            '<p>Nodes can temporarily drop out of a training round due to connectivity issues, local resource constraints, or scheduled maintenance. The federated protocol is designed to be <strong>fault-tolerant</strong> — training continues as long as a minimum quorum (3 nodes) is maintained.</p>' +
+            '<p>Inactive nodes re-sync their local models when they rejoin, receiving the latest global weights without exposing any missed local data.</p>';
+        } else if (type === 'accuracy') {
+          content =
+            '<h4>Model Performance</h4>' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-item-label">Global F1 Score</div><div class="detail-item-value" style="color:var(--accent-green)">' + (s.accuracy * 100).toFixed(2) + '%</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Baseline</div><div class="detail-item-value" style="color:var(--text-muted)">75.00%</div></div>' +
+            '</div>' +
+            '<div class="detail-bar">' +
+              '<div class="detail-bar-label"><span>Accuracy</span><span>' + (s.accuracy * 100).toFixed(2) + '% / 100%</span></div>' +
+              '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + (s.accuracy * 100) + '%;background:var(--accent-green)"></div></div>' +
+            '</div>' +
+            '<h4>What This Measures</h4>' +
+            '<p>The F1 score is the harmonic mean of precision and recall across all prediction tasks. In our federated system, this score reflects the <strong>global model\'s</strong> performance — the aggregated intelligence of all participating nodes without any single node exposing its raw data.</p>' +
+            '<p>Accuracy may fluctuate between rounds as new data is incorporated and privacy noise is applied.</p>';
+        } else if (type === 'privacy') {
+          var budgetPct = (s.privacyBudget / 3.0 * 100).toFixed(0);
+          content =
+            '<h4>Privacy Budget Status</h4>' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-item-label">Current &epsilon;</div><div class="detail-item-value" style="color:var(--accent-amber)">' + s.privacyBudget.toFixed(2) + '</div></div>' +
+              '<div class="detail-item"><div class="detail-item-label">Initial &epsilon;</div><div class="detail-item-value" style="color:var(--text-muted)">3.00</div></div>' +
+            '</div>' +
+            '<div class="detail-bar">' +
+              '<div class="detail-bar-label"><span>Budget Remaining</span><span>' + budgetPct + '%</span></div>' +
+              '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + budgetPct + '%;background:var(--accent-amber)"></div></div>' +
+            '</div>' +
+            '<h4>What is Differential Privacy?</h4>' +
+            '<p>Differential privacy provides a mathematical guarantee that the output of an analysis does not reveal whether any individual\'s data was included. The privacy budget (&epsilon;) controls the total amount of information leakage allowed.</p>' +
+            '<p><strong>Lower &epsilon; = stronger privacy, noisier model.</strong> When the budget is exhausted, training pauses until it is reset — ensuring community data sovereignty is never compromised for model performance.</p>' +
+            '<span class="detail-tag tag-green">Data Never Leaves Node</span>' +
+            '<span class="detail-tag tag-amber">Budget Tracked Per-Round</span>' +
+            '<span class="detail-tag tag-purple">Secure Aggregation Active</span>';
+        }
+        Modal.open('Federated Learning — ' + type.charAt(0).toUpperCase() + type.slice(1), content);
+      },
+
+      showSummaryDetail: function(type) {
+        var details = {
+          nodes: {
+            title: 'Total Nodes — Overview',
+            html: '<h4>Network Topology</h4>' +
+              '<p>The Ogden, AR deployment currently operates <strong>8 service nodes</strong> distributed across community infrastructure endpoints. Each node runs a lightweight monitoring agent that reports health, latency, and service availability.</p>' +
+              '<div class="detail-grid">' +
+                '<div class="detail-item"><div class="detail-item-label">Deployed</div><div class="detail-item-value" style="color:var(--accent-blue)">8</div></div>' +
+                '<div class="detail-item"><div class="detail-item-label">Coverage</div><div class="detail-item-value" style="font-size:14px;color:var(--accent-green)">Full Township</div></div>' +
+              '</div>' +
+              '<h4>Node Types</h4>' +
+              '<span class="detail-tag tag-green">Health</span><span class="detail-tag tag-blue">Connectivity</span><span class="detail-tag tag-blue">Water</span><span class="detail-tag tag-red">Emergency</span><span class="detail-tag tag-amber">Power</span><span class="detail-tag tag-purple">Education</span><span class="detail-tag tag-green">Agriculture</span><span class="detail-tag tag-blue">Community</span>'
+          },
+          uptime: {
+            title: 'Average Uptime — Overview',
+            html: '<h4>System Reliability</h4>' +
+              '<p>Average uptime is calculated across all active service nodes over a rolling 30-day window. The target for critical services (Health, Emergency, Water) is <strong>99.9%</strong>; non-critical services target <strong>97%</strong>.</p>' +
+              '<div class="detail-bar"><div class="detail-bar-label"><span>Current Average</span><span>' + document.getElementById('sumUptime').textContent + '</span></div>' +
+              '<div class="detail-bar-track"><div class="detail-bar-fill" style="width:' + parseFloat(document.getElementById('sumUptime').textContent) + '%;background:var(--accent-green)"></div></div></div>' +
+              '<h4>Why Uptime Matters</h4>' +
+              '<p>In rural communities, infrastructure outages have outsized impact — there are no redundant systems or nearby alternatives. A water monitoring outage in Ogden means <strong>no visibility</strong> into water quality until physical inspection.</p>'
+          },
+          data: {
+            title: 'Data Points — Overview',
+            html: '<h4>Telemetry Volume</h4>' +
+              '<p>Data points represent the total number of sensor readings, status checks, and metric samples collected across all nodes since deployment. All data is processed locally — <strong>no raw telemetry is sent to external servers</strong>.</p>' +
+              '<div class="detail-item" style="margin:12px 0"><div class="detail-item-label">Total Collected</div><div class="detail-item-value" style="color:var(--accent-purple)">' + document.getElementById('sumData').textContent + '</div></div>' +
+              '<h4>Data Sovereignty</h4>' +
+              '<p>Every data point stays on the node that generated it. Only aggregated, anonymized model updates leave the local network — this is a core architectural requirement, not an optimization.</p>'
+          },
+          privacy: {
+            title: 'Privacy Score — Overview',
+            html: '<h4>Privacy Compliance</h4>' +
+              '<div class="detail-item" style="margin:12px 0"><div class="detail-item-label">Overall Score</div><div class="detail-item-value" style="color:var(--accent-amber);font-size:36px">A+</div></div>' +
+              '<h4>What This Score Means</h4>' +
+              '<p>The privacy score is a composite measure of:</p>' +
+              '<div style="margin:8px 0">' +
+                '<span class="detail-tag tag-green">No external data transmission</span>' +
+                '<span class="detail-tag tag-green">Differential privacy active</span>' +
+                '<span class="detail-tag tag-green">Secure aggregation verified</span>' +
+                '<span class="detail-tag tag-green">On-device processing only</span>' +
+                '<span class="detail-tag tag-green">Zero telemetry / analytics</span>' +
+              '</div>' +
+              '<p>An A+ score means all privacy requirements are met with no exceptions. The system is designed so that <strong>no configuration change</strong> can disable these protections — privacy is structural, not configurable.</p>'
+          },
+          alerts: {
+            title: 'Active Alerts — Overview',
+            html: '<h4>Current Alerts</h4>' +
+              '<p>Alerts are generated when a node enters a degraded or offline state, when latency exceeds thresholds, or when the federated learning system detects anomalies.</p>' +
+              '<div class="detail-item" style="margin:12px 0"><div class="detail-item-label">Active Alerts</div><div class="detail-item-value" style="color:var(--accent-red)">' + document.getElementById('sumAlerts').textContent + '</div></div>' +
+              '<h4>Alert Policy</h4>' +
+              '<p>Alerts are designed to surface <strong>actionable information</strong> to community operators, not to generate noise. Each alert includes a plain-language explanation of what happened, what it means, and what to do — because the people monitoring this system may not be network engineers.</p>' +
+              '<span class="detail-tag tag-red">Critical: Node Offline</span>' +
+              '<span class="detail-tag tag-amber">Warning: Degraded Performance</span>' +
+              '<span class="detail-tag tag-blue">Info: Scheduled Maintenance</span>'
+          }
+        };
+        var d = details[type];
+        Modal.open(d.title, d.html);
+      }
+    };
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') Modal.close();
+      if (e.key === 'Tab') Modal._trapFocus(e);
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       LIVE CLOCK
+       ═══════════════════════════════════════════════════════ */
+    (function clockModule() {
+      var el = document.getElementById('clock');
+      function tick() {
+        var now = new Date();
+        el.textContent = now.toLocaleString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       GRID EFFICIENCY CHART (Canvas + Tooltip)
+       ═══════════════════════════════════════════════════════ */
+    var GridChart = (function() {
+      var canvas = document.getElementById('gridChart');
+      var ctx = canvas.getContext('2d');
+      var tooltip = document.getElementById('chartTooltip');
+      var maxPoints = 60;
+      var effData = [], loadData = [], peakToday = 0;
+      var padTop = 10, padBot = 24, padLeft = 36, padRight = 12;
+
+      for (var i = 0; i < maxPoints; i++) {
+        effData.push(78 + Math.random() * 14);
+        loadData.push(40 + Math.random() * 35);
+      }
+
+      function resize() {
+        var rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+      resize();
+      var resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 150);
+      });
+
+      function getChartDims() {
+        var w = canvas.width / window.devicePixelRatio;
+        var h = canvas.height / window.devicePixelRatio;
+        return { w: w, h: h, chartW: w - padLeft - padRight, chartH: h - padTop - padBot };
+      }
+
+      function drawChart() {
+        var d = getChartDims();
+        ctx.clearRect(0, 0, d.w, d.h);
+
+        // Grid lines + labels
+        ctx.fillStyle = '#8892a4';
+        ctx.font = '10px system-ui, sans-serif';
+        ctx.textAlign = 'right';
+        for (var v = 0; v <= 100; v += 25) {
+          var y = padTop + d.chartH - (v / 100) * d.chartH;
+          ctx.fillText(v + '%', padLeft - 6, y + 3);
+          ctx.strokeStyle = 'rgba(30,42,58,0.6)';
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(d.w - padRight, y); ctx.stroke();
+        }
+
+        // Threshold
+        var threshY = padTop + d.chartH - (85 / 100) * d.chartH;
+        ctx.strokeStyle = 'rgba(251,191,36,0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(padLeft, threshY); ctx.lineTo(d.w - padRight, threshY); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(251,191,36,0.5)';
+        ctx.font = '9px system-ui';
+        ctx.textAlign = 'left';
+        ctx.fillText('85% target', d.w - padRight - 54, threshY - 4);
+
+        function drawLine(data, color, alphaFill) {
+          ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.beginPath();
+          for (var i = 0; i < data.length; i++) {
+            var x = padLeft + (i / (maxPoints - 1)) * d.chartW;
+            var y = padTop + d.chartH - (data[i] / 100) * d.chartH;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+          ctx.lineTo(padLeft + d.chartW, padTop + d.chartH);
+          ctx.lineTo(padLeft, padTop + d.chartH);
+          ctx.closePath();
+          ctx.fillStyle = color.replace('1)', alphaFill + ')').replace('rgb', 'rgba');
+          ctx.fill();
+        }
+
+        drawLine(effData, 'rgba(52,211,153,1)', '0.06');
+        drawLine(loadData, 'rgba(96,165,250,1)', '0.04');
+
+        // Dot
+        var lastEff = effData[effData.length - 1];
+        var dotX = padLeft + d.chartW;
+        var dotY = padTop + d.chartH - (lastEff / 100) * d.chartH;
+        ctx.beginPath(); ctx.arc(dotX, dotY, 4, 0, Math.PI * 2); ctx.fillStyle = '#34d399'; ctx.fill();
+        ctx.beginPath(); ctx.arc(dotX, dotY, 7, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(52,211,153,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+      }
+
+      // Tooltip on hover
+      canvas.addEventListener('mousemove', function(e) {
+        var rect = canvas.getBoundingClientRect();
+        var mouseX = e.clientX - rect.left;
+        var d = getChartDims();
+        var idx = Math.round((mouseX - padLeft) / d.chartW * (maxPoints - 1));
+        idx = Math.max(0, Math.min(maxPoints - 1, idx));
+
+        var ago = maxPoints - 1 - idx;
+        tooltip.innerHTML =
+          '<div class="tt-label">' + (ago === 0 ? 'Now' : ago * 1.5 + 's ago') + '</div>' +
+          '<div class="tt-row"><span class="tt-dot" style="background:var(--accent-green)"></span> Efficiency: <span class="tt-val" style="color:var(--accent-green)">' + effData[idx].toFixed(1) + '%</span></div>' +
+          '<div class="tt-row"><span class="tt-dot" style="background:var(--accent-blue)"></span> Load: <span class="tt-val" style="color:var(--accent-blue)">' + loadData[idx].toFixed(0) + ' kW</span></div>';
+
+        tooltip.style.display = 'block';
+        var tx = mouseX + 12;
+        if (tx + 170 > d.w) tx = mouseX - 170;
+        tooltip.style.left = tx + 'px';
+        var y = padTop + d.chartH - (effData[idx] / 100) * d.chartH;
+        tooltip.style.top = Math.max(0, y - 30) + 'px';
+      });
+
+      canvas.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+
+      // Click to open detail
+      canvas.addEventListener('click', function() {
+        var last = effData[effData.length - 1];
+        var avg = effData.reduce(function(a, b) { return a + b; }, 0) / effData.length;
+        var min = Math.min.apply(null, effData);
+        var max = Math.max.apply(null, effData);
+
+        Modal.open('Grid Efficiency — Detail View',
+          '<h4>Performance Window (Last 90 seconds)</h4>' +
+          '<div class="detail-grid">' +
+            '<div class="detail-item"><div class="detail-item-label">Current</div><div class="detail-item-value" style="color:var(--accent-green)">' + last.toFixed(1) + '%</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Average</div><div class="detail-item-value" style="color:var(--accent-blue)">' + avg.toFixed(1) + '%</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Minimum</div><div class="detail-item-value" style="color:var(--accent-red)">' + min.toFixed(1) + '%</div></div>' +
+            '<div class="detail-item"><div class="detail-item-label">Maximum</div><div class="detail-item-value" style="color:var(--accent-amber)">' + max.toFixed(1) + '%</div></div>' +
+          '</div>' +
+          '<h4>Grid Optimization Model</h4>' +
+          '<p>The grid efficiency model uses load forecasting to predict demand spikes and pre-position distributed energy resources. In Ogden, this means coordinating between the municipal grid feed and local solar/battery installations.</p>' +
+          '<p>The AI model runs <strong>on-premise</strong> — it processes smart meter data locally and produces optimization recommendations without transmitting household-level consumption data to any external system.</p>' +
+          '<h4>Current Assessment</h4>' +
+          '<p>' + (last >= 85 ? '<span class="detail-tag tag-green">ABOVE TARGET</span> Grid is operating efficiently. No intervention needed.' : last >= 75 ? '<span class="detail-tag tag-amber">NEAR TARGET</span> Efficiency is within acceptable range but trending below the 85% target. Load balancing adjustments recommended.' : '<span class="detail-tag tag-red">BELOW TARGET</span> Grid efficiency is below optimal. Investigate load distribution and check for infrastructure faults.') + '</p>'
+        );
+      });
+
+      function update() {
+        try {
+        var newEff = effData[effData.length - 1] + (Math.random() - 0.48) * 3;
+        newEff = Math.max(65, Math.min(98, newEff));
+        effData.push(newEff);
+        if (effData.length > maxPoints) effData.shift();
+
+        var newLoad = loadData[loadData.length - 1] + (Math.random() - 0.5) * 5;
+        newLoad = Math.max(20, Math.min(90, newLoad));
+        loadData.push(newLoad);
+        if (loadData.length > maxPoints) loadData.shift();
+
+        peakToday = Math.max(peakToday, newEff);
+
+        document.getElementById('gridEfficiency').textContent = newEff.toFixed(1) + '%';
+        document.getElementById('gridLoad').textContent = newLoad.toFixed(0) + ' kW';
+        document.getElementById('gridPeak').textContent = peakToday.toFixed(1) + '%';
+        drawChart();
+        } catch(e) { console.error('Grid chart update error:', e); }
+      }
+
+      // Time range selector
+      var timeRangeBtns = document.querySelectorAll('.time-range-btn');
+      timeRangeBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          timeRangeBtns.forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          var range = parseInt(btn.getAttribute('data-range'));
+          maxPoints = range / 1.5;
+          while (effData.length > maxPoints) effData.shift();
+          while (loadData.length > maxPoints) loadData.shift();
+          drawChart();
+        });
+      });
+
+      update();
+      setInterval(update, 1500);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       CROP YIELD TABLE
+       ═══════════════════════════════════════════════════════ */
+    var CropData = {
+      crops: [
+        { name: 'Soybeans',     yield: 52,  pH: 6.3, moisture: 42 },
+        { name: 'Corn',         yield: 178, pH: 6.5, moisture: 38 },
+        { name: 'Winter Wheat', yield: 58,  pH: 6.7, moisture: 35 },
+        { name: 'Rice',         yield: 7400,pH: 5.8, moisture: 65 },
+        { name: 'Cotton',       yield: 880, pH: 6.2, moisture: 31 },
+        { name: 'Hay / Forage', yield: 4.2, pH: 6.4, moisture: 44 },
+      ],
+      history: [[], [], [], [], [], []],
+      prevYields: [],
+
+      getRecommendation: function(c) {
+        var recs = [];
+        if (c.pH < 5.5) recs.push('Soil pH is low — consider lime application to raise pH toward optimal range.');
+        else if (c.pH > 7.2) recs.push('Soil pH is elevated — sulfur amendment may improve nutrient availability.');
+        if (c.moisture < 25) recs.push('Soil moisture is critically low — irrigation scheduling recommended.');
+        else if (c.moisture > 70) recs.push('Soil moisture is high — monitor for waterlogging and root disease.');
+        if (recs.length === 0) recs.push('All readings within optimal range. Continue current management practices. AI model confidence: high.');
+        return recs.join(' ');
+      },
+
+      init: function() {
+        this.prevYields = this.crops.map(function(c) { return c.yield; });
+      }
+    };
+    CropData.init();
+
+    (function cropModule() {
+      var tbody = document.getElementById('cropTableBody');
+
+      function render() {
+        var rows = '';
+        var maxYield = Math.max.apply(null, CropData.crops.map(function(c) { return c.yield; }));
+        CropData.crops.forEach(function(crop, i) {
+          var delta = crop.yield - CropData.prevYields[i];
+          var trendClass = delta > 0 ? 'trend-up' : delta < 0 ? 'trend-down' : 'trend-flat';
+          var trendIcon = delta > 0 ? '&#9650;' : delta < 0 ? '&#9660;' : '&#9644;';
+          var pct = (crop.yield / maxYield * 100).toFixed(0);
+          rows += '<tr class="' + (delta !== 0 ? 'flash' : '') + '" onclick="Modal.showCropDetail(' + i + ')">' +
+            '<td><strong>' + crop.name + '</strong></td>' +
+            '<td>' + crop.yield.toFixed(1) + '</td>' +
+            '<td class="' + trendClass + '">' + trendIcon + ' ' + Math.abs(delta).toFixed(1) + '</td>' +
+            '<td>' + crop.pH.toFixed(1) + '</td>' +
+            '<td>' + crop.moisture.toFixed(0) + '%</td>' +
+            '<td class="yield-bar-cell"><div class="yield-bar" style="width:' + pct + '%"></div></td></tr>';
+          CropData.prevYields[i] = crop.yield;
+        });
+        tbody.innerHTML = rows;
+        setTimeout(function() {
+          var f = tbody.querySelectorAll('.flash');
+          for (var r = 0; r < f.length; r++) f[r].classList.remove('flash');
+        }, 600);
+      }
+
+      function update() {
+        try {
+        var now = new Date().toLocaleTimeString('en-US', { hour12: false });
+        CropData.crops.forEach(function(crop, i) {
+          crop.yield += (Math.random() - 0.47) * crop.yield * 0.01;
+          crop.pH += (Math.random() - 0.5) * 0.05;
+          crop.pH = Math.max(5.0, Math.min(7.5, crop.pH));
+          crop.moisture += (Math.random() - 0.5) * 2;
+          crop.moisture = Math.max(15, Math.min(80, crop.moisture));
+          CropData.history[i].push({ time: now, yield: crop.yield.toFixed(1), pH: crop.pH.toFixed(2), moisture: crop.moisture.toFixed(0) });
+          if (CropData.history[i].length > 20) CropData.history[i].shift();
+        });
+        render();
+        } catch(e) { console.error('Crop update error:', e); }
+      }
+
+      render();
+      setInterval(update, 3000);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       SERVICE NODE MONITOR
+       ═══════════════════════════════════════════════════════ */
+    var NodeData = {
+      nodes: [
+        { id: 'HLTH-01', name: 'Health Clinic',  icon: '\u2695',  status: 'online', latency: 24, uptime: 99.7 },
+        { id: 'NET-01',  name: 'Connectivity',   icon: '\u25C8',  status: 'online', latency: 12, uptime: 99.9 },
+        { id: 'WTR-01',  name: 'Water System',   icon: '\u2B24',  status: 'online', latency: 31, uptime: 98.4 },
+        { id: 'EMR-01',  name: 'Emergency Svc',  icon: '\u26A0',  status: 'online', latency: 8,  uptime: 99.95 },
+        { id: 'PWR-01',  name: 'Power Grid',     icon: '\u26A1',  status: 'online', latency: 15, uptime: 99.2 },
+        { id: 'EDU-01',  name: 'School Hub',     icon: '\u2302',  status: 'online', latency: 28, uptime: 97.8 },
+        { id: 'AGR-01',  name: 'Ag Sensors',     icon: '\u2618',  status: 'online', latency: 45, uptime: 96.5 },
+        { id: 'COM-01',  name: 'Community Ctr',  icon: '\u2605',  status: 'online', latency: 19, uptime: 99.1 },
+      ],
+      history: [[], [], [], [], [], [], [], []],
+      profiles: [
+        { /* HLTH-01 */
+          desc: 'Monitors patient check-in systems, medical equipment uptime, and telehealth connectivity at the Ogden community health clinic.',
+          location: 'Ogden Community Health Clinic, 120 Main St',
+          priority: 'Critical',
+          uptimeTarget: '99.9%',
+          deployed: '2025-06-14',
+          hardware: 'Raspberry Pi 4B (8GB) + 4G LTE failover',
+          sensors: ['Patient check-in kiosk status', 'Telehealth video link quality (jitter, packet loss)', 'Medical refrigerator temperature (vaccine storage)', 'Building HVAC status', 'Backup generator fuel level'],
+          aiModels: ['Appointment no-show predictor — flags patients likely to miss visits so staff can send reminders', 'Telehealth quality forecaster — predicts bandwidth drops 15 min ahead to allow session rescheduling'],
+          privacyNotes: 'No patient health data is collected or processed by this node. Monitoring is limited to system availability and environmental sensors. Telehealth quality metrics measure network performance, not session content. All data stays on-device.',
+          dependencies: ['NET-01 (primary connectivity)', 'PWR-01 (power feed)', 'EMR-01 (emergency fallback)'],
+          riskFactors: ['Single point of failure for telehealth — no redundant clinic in township', 'Vaccine storage monitoring is safety-critical: 15-minute alert window on temperature excursion', '4G failover has limited bandwidth — supports status reporting but not telehealth sessions'],
+          community: 'The health clinic serves approximately 340 residents and is the only healthcare facility within a 25-mile radius. An outage here means residents must travel to Harrison (45 min) or Berryville (35 min) for basic care. Telehealth availability has reduced unnecessary emergency trips by an estimated 30% since deployment.'
+        },
+        { /* NET-01 */
+          desc: 'Tracks broadband backhaul and last-mile wireless connectivity serving the township. Provides the network layer for all other service nodes.',
+          location: 'Ogden Water Tower (antenna mount) + Municipal Building',
+          priority: 'Critical',
+          uptimeTarget: '99.9%',
+          deployed: '2025-05-20',
+          hardware: 'Ubiquiti EdgeRouter 4 + sector antenna + fiber ONT',
+          sensors: ['Backhaul bandwidth utilization (up/down)', 'Last-mile wireless signal strength per sector', 'Packet loss rate (1-min rolling)', 'Connected device count', 'DNS resolution latency'],
+          aiModels: ['Bandwidth demand predictor — forecasts peak usage windows to pre-allocate capacity', 'Anomaly detector — identifies unusual traffic patterns that may indicate equipment failure or interference'],
+          privacyNotes: 'Traffic monitoring is aggregate-only — no deep packet inspection, no URL logging, no per-device tracking. Device counts are anonymized; MAC addresses are hashed and rotated daily. The system cannot see what anyone is doing online, only whether the network is healthy.',
+          dependencies: ['PWR-01 (power feed)', 'External ISP backhaul (fiber)'],
+          riskFactors: ['Single ISP fiber run — no redundant backhaul path currently exists', 'Water tower antenna is exposed to weather; ice loading has caused 2 historical outages', 'All other nodes depend on this connectivity layer — a NET-01 failure cascades to every service'],
+          community: 'Before this deployment, Ogden had no broadband infrastructure. Residents relied on cellular hotspots or satellite with 600ms+ latency. This node provides the connectivity backbone for the entire initiative — school remote learning, telehealth, emergency services, and agricultural data all flow through this link.'
+        },
+        { /* WTR-01 */
+          desc: 'Monitors municipal water treatment and distribution. Tracks pressure, flow rates, and quality sensor readings across the Ogden water infrastructure.',
+          location: 'Ogden Water Treatment Plant + 3 distribution points',
+          priority: 'Critical',
+          uptimeTarget: '99.5%',
+          deployed: '2025-07-08',
+          hardware: 'Arduino Mega + industrial pressure transducers + pH/turbidity probes',
+          sensors: ['Water pressure at treatment plant outlet (PSI)', 'Flow rate at 3 distribution junctions (GPM)', 'pH level (continuous)', 'Turbidity (NTU)', 'Chlorine residual (mg/L)', 'Storage tank level (%)'],
+          aiModels: ['Leak detection model — identifies pressure drops that indicate pipe breaks before surface evidence appears', 'Water quality anomaly detector — flags unusual pH/turbidity combinations that may indicate contamination events'],
+          privacyNotes: 'Water system monitoring collects no personally identifiable information. All sensors measure infrastructure metrics (pressure, flow, chemistry). No household-level consumption data is collected. Usage patterns cannot be reverse-engineered from distribution junction measurements.',
+          dependencies: ['NET-01 (telemetry upload)', 'PWR-01 (pump station power)'],
+          riskFactors: ['Aging pipe infrastructure (some sections 40+ years old) means higher baseline leak probability', 'Turbidity probes require monthly calibration — missed calibration can cause false positives', 'A water contamination event with delayed detection could affect all 340 residents — this is the highest-consequence failure mode in the system'],
+          community: 'Ogden\'s water system serves the entire township from a single treatment plant. Two boil-water advisories in the past 5 years were issued after contamination was detected by manual testing — each time, residents had been consuming affected water for 12+ hours before notification. This node reduces detection time from hours to minutes.'
+        },
+        { /* EMR-01 */
+          desc: 'Emergency dispatch and first responder coordination. Monitors 911 relay, volunteer fire department alerting, and severe weather notification systems.',
+          location: 'Ogden Volunteer Fire Station + County dispatch relay',
+          priority: 'Critical',
+          uptimeTarget: '99.99%',
+          deployed: '2025-06-01',
+          hardware: 'Hardened edge server + UPS (4-hour battery) + satellite uplink backup',
+          sensors: ['911 relay connection status', 'VFD pager system health', 'Severe weather radio feed (NOAA)', 'Response time tracking (dispatch-to-arrival)', 'Volunteer responder availability count', 'Backup power remaining (hours)'],
+          aiModels: ['Response time optimizer — analyzes road conditions, weather, and volunteer locations to recommend fastest dispatch routing', 'Severe weather correlator — cross-references NOAA feeds with local sensor data to provide hyper-local risk assessment'],
+          privacyNotes: 'Volunteer locations are only tracked during active dispatch events and only with opt-in consent. Location data is purged 24 hours after incident closure. 911 call content is never processed by this node — only relay connectivity status is monitored. All emergency data stays within the county dispatch system.',
+          dependencies: ['NET-01 (primary)', 'Satellite uplink (failover)', 'PWR-01 + internal UPS'],
+          riskFactors: ['Volunteer fire department has 12 members — if fewer than 4 are available, mutual aid from Harrison must be requested (35+ min response)', 'Satellite failover adds 800ms latency — adequate for alerts but not real-time coordination', 'This node has the highest uptime requirement because emergency communication failures are life-safety events'],
+          community: 'Ogden relies entirely on a volunteer fire department and county-level EMS. Average response time before the initiative was 18 minutes; the optimization model has helped reduce this to 13 minutes by improving dispatch routing and volunteer notification. In severe weather events, this node provides the only automated alert system for residents outside of cell coverage.'
+        },
+        { /* PWR-01 */
+          desc: 'Monitors the power distribution grid including smart meter aggregation, transformer health, and solar/battery integration points.',
+          location: 'Ogden substation + 6 distribution transformer sites',
+          priority: 'Critical',
+          uptimeTarget: '99.5%',
+          deployed: '2025-05-28',
+          hardware: 'Industrial IoT gateway + CT clamps + temperature sensors per transformer',
+          sensors: ['Substation load (kW aggregate)', 'Per-transformer load and temperature', 'Line voltage at 6 distribution points', 'Solar generation output (community array)', 'Battery storage state of charge (%)', 'Power factor measurement'],
+          aiModels: ['Load forecasting model — predicts demand 1-24 hours ahead using weather, time-of-day, and historical patterns', 'Transformer health predictor — uses temperature and load profiles to estimate remaining useful life and flag pre-failure conditions', 'Solar/battery optimizer — determines when to store, discharge, or export solar generation based on forecast demand and grid pricing'],
+          privacyNotes: 'Smart meter data is aggregated at the transformer level — the system cannot distinguish individual household consumption. No meter-level data is collected, stored, or transmitted. Transformer-level aggregation is the minimum granularity needed for grid optimization while preserving household privacy.',
+          dependencies: ['NET-01 (telemetry)', 'External utility feed (Carroll Electric)'],
+          riskFactors: ['3 of 6 distribution transformers are 20+ years old and approaching end-of-life', 'Community solar array is sized for 15% of peak demand — storage capacity limits overnight coverage', 'A multi-transformer failure in summer peak would require manual load shedding with no automated switching'],
+          community: 'Ogden experiences an average of 8 unplanned outages per year, most caused by aging transformer failures and storm damage. The AI load forecasting model has enabled the co-op to pre-position repair crews before predicted stress events, reducing average restoration time from 4.2 hours to 2.1 hours. The community solar + battery system provides backup for the health clinic and emergency services during extended outages.'
+        },
+        { /* EDU-01 */
+          desc: 'School district technology hub — monitors learning management systems, device fleet, and student connectivity for remote learning support.',
+          location: 'Ogden Elementary/Middle School campus',
+          priority: 'Standard',
+          uptimeTarget: '97%',
+          deployed: '2025-08-15',
+          hardware: 'Raspberry Pi 4B + network TAP + managed switch monitor',
+          sensors: ['LMS platform availability (Moodle)', 'Student device online count', 'Classroom WiFi AP status (4 access points)', 'Internet bandwidth used vs. allocated', 'Projector/display system status per classroom', 'Chromebook fleet battery health aggregate'],
+          aiModels: ['Engagement pattern detector — identifies when student device activity drops below baseline, which may indicate connectivity issues or content access problems (not surveillance — measures aggregate access patterns, not individual behavior)', 'Device lifecycle predictor — forecasts Chromebook replacement needs based on battery degradation and repair history to support budget planning'],
+          privacyNotes: 'Student privacy is governed by FERPA and COPPA requirements. This node monitors system availability and aggregate device metrics only — no student names, grades, browsing history, or individual activity is collected. The engagement detector uses classroom-level aggregate patterns, not individual student tracking. All education data processing complies with district data governance policy.',
+          dependencies: ['NET-01 (internet connectivity)', 'PWR-01 (building power)'],
+          riskFactors: ['School has 1 IT staff member for ~180 students — node monitoring reduces the manual monitoring burden', 'Chromebook fleet is 3 years old with increasing failure rates — 15% of devices have degraded batteries', 'During remote learning events (weather days), bandwidth demand spikes 3x and may saturate the NET-01 backhaul'],
+          community: 'Ogden\'s school serves K-8 students from across the township and is often the only place families interact with technology infrastructure. The device fleet and connectivity monitoring ensures that the 40% of students who lack reliable home internet can access learning materials during remote instruction days. The school also hosts adult digital literacy classes two evenings per week, supported by this same infrastructure.'
+        },
+        { /* AGR-01 */
+          desc: 'Agricultural sensor network covering soil moisture, temperature, weather station data, and crop monitoring across participating farms.',
+          location: '5 participating farm sites + central weather station at co-op',
+          priority: 'Standard',
+          uptimeTarget: '95%',
+          deployed: '2025-07-22',
+          hardware: 'LoRaWAN gateway + solar-powered field sensors + Davis Vantage Pro2 weather station',
+          sensors: ['Soil moisture at 3 depths (6", 12", 24") per site', 'Soil temperature per site', 'Local weather station (temp, humidity, wind, rainfall, solar radiation)', 'Leaf wetness sensors (disease risk)', 'Soil pH (periodic, manually calibrated)', 'Growing degree day accumulation'],
+          aiModels: ['Irrigation optimizer — combines soil moisture data with weather forecasts to recommend watering schedules that reduce water usage while maintaining yields', 'Disease risk model — uses leaf wetness duration, temperature, and humidity to predict fungal disease outbreaks 48-72 hours ahead', 'Yield estimator — uses growing degree days, soil conditions, and historical data to project harvest yields for crop planning'],
+          privacyNotes: 'Farm-level data is owned by each participating farmer and is not shared between farms or with any external parties. The federated learning model trains locally on each farm\'s data and only shares model weight updates — neighboring farms cannot learn what another farm is growing, how much they produce, or what inputs they use. Data sharing is opt-in per sensor, per farm.',
+          dependencies: ['NET-01 (LoRaWAN backhaul)', 'Solar panels (field sensor power)'],
+          riskFactors: ['LoRa range is limited by terrain — 2 of 5 farms are in valleys with marginal signal quality', 'Solar-powered sensors can lose charge during extended overcast periods in winter', 'Only 5 of approximately 20 farms in the area are currently participating — model accuracy improves with more data, but trust must be earned before more farmers will opt in'],
+          community: 'Agriculture is the primary economic driver in the Ogden area. Most operations are small family farms (40-200 acres) without access to the precision agriculture tools that large corporate farms use. This node gives participating farmers data-driven insights that were previously available only to operations spending $50K+ on commercial ag-tech platforms. Early results show a 12% reduction in water usage and a 7% yield improvement on participating farms.'
+        },
+        { /* COM-01 */
+          desc: 'Community center systems including public WiFi, event scheduling, resource reservation, and community notice board infrastructure.',
+          location: 'Ogden Community Center, 200 Elm St',
+          priority: 'Standard',
+          uptimeTarget: '97%',
+          deployed: '2025-09-01',
+          hardware: 'Raspberry Pi 4B + Ubiquiti UAP-AC-Pro + digital signage display',
+          sensors: ['Public WiFi concurrent users', 'WiFi bandwidth utilization', 'Event room occupancy (PIR motion, not camera)', 'Digital signage system health', 'Building temperature and humidity', 'Public computer terminal availability (3 stations)'],
+          aiModels: ['Usage pattern analyzer — identifies peak community center usage times to optimize staffing and energy management (HVAC scheduling)', 'Resource demand forecaster — predicts event room and computer terminal demand to support reservation planning and identify if additional resources are needed'],
+          privacyNotes: 'WiFi user counts are derived from association events — no MAC addresses are stored, no traffic is inspected, no browsing activity is logged. Room occupancy uses PIR motion sensors (heat detection), not cameras — the system knows if a room is occupied, not who is in it. Public computer terminals track availability status only, not user sessions or activity.',
+          dependencies: ['NET-01 (internet backhaul)', 'PWR-01 (building power)'],
+          riskFactors: ['Community center is the designated severe weather shelter — all systems must function during emergency events', 'Public WiFi is the only internet access point for approximately 15% of township residents', 'Digital signage is the primary channel for community announcements — an undetected failure means residents miss critical information'],
+          community: 'The community center is the social hub of Ogden — it hosts everything from town meetings and youth programs to senior lunches and voting. For residents without home internet (estimated 15% of households), the public WiFi and computer terminals are their primary connection to online services including healthcare portals, government benefits, and job applications. The center\'s digital signage replaced a physical bulletin board and now reaches residents who visit the building weekly.'
+        }
+      ]
+    };
+
+    (function nodesModule() {
+      var grid = document.getElementById('nodesGrid');
+      var summaryEl = document.getElementById('nodesSummary');
+
+      function render() {
+        var html = '';
+        NodeData.nodes.forEach(function(node, i) {
+          html += '<div class="node-card ' + node.status + '" role="listitem button" tabindex="0" onclick="Modal.showNodeDetail(' + i + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();Modal.showNodeDetail(' + i + ')}" aria-label="' + node.name + ' — ' + node.status + ', ' + node.latency + ' ms latency, ' + node.uptime.toFixed(1) + '% uptime">' +
+            '<div class="node-icon" aria-hidden="true">' + node.icon + '</div>' +
+            '<div class="node-name">' + node.name + '</div>' +
+            '<div class="node-status">' + node.status.toUpperCase() + '</div>' +
+            '<div class="node-latency">' + node.latency + ' ms</div>' +
+            '<div class="node-uptime">' + node.uptime.toFixed(1) + '% uptime</div></div>';
+        });
+        grid.innerHTML = html;
+
+        var online = 0, degraded = 0, offline = 0;
+        NodeData.nodes.forEach(function(n) {
+          if (n.status === 'online') online++;
+          else if (n.status === 'degraded') degraded++;
+          else offline++;
+        });
+        summaryEl.innerHTML =
+          '<div class="nodes-summary-item"><span class="dot" style="background:var(--accent-green)"></span>' + online + ' Online</div>' +
+          '<div class="nodes-summary-item"><span class="dot" style="background:var(--accent-amber)"></span>' + degraded + ' Degraded</div>' +
+          '<div class="nodes-summary-item"><span class="dot" style="background:var(--accent-red)"></span>' + offline + ' Offline</div>';
+      }
+
+      function update() {
+        try {
+        var now = new Date().toLocaleTimeString('en-US', { hour12: false });
+        NodeData.nodes.forEach(function(node, i) {
+          var prevStatus = node.status;
+          var roll = Math.random();
+          if (node.status === 'offline' && roll > 0.4) node.status = 'online';
+          else if (node.status === 'degraded' && roll > 0.6) node.status = 'online';
+          else if (node.status === 'degraded' && roll < 0.1) node.status = 'offline';
+          else if (node.status === 'online' && roll < 0.04) node.status = 'offline';
+          else if (node.status === 'online' && roll < 0.10) node.status = 'degraded';
+
+          node.latency += Math.round((Math.random() - 0.5) * 10);
+          node.latency = Math.max(2, Math.min(200, node.latency));
+          if (node.status === 'degraded') node.latency = Math.max(80, node.latency);
+          if (node.status === 'offline') node.latency = 0;
+
+          if (prevStatus !== node.status) {
+            if (node.status === 'offline') Toast.show(node.name + ' (' + node.id + ') went OFFLINE', 'error');
+            else if (node.status === 'degraded') Toast.show(node.name + ' (' + node.id + ') is DEGRADED', 'warn');
+            else if (prevStatus === 'offline') Toast.show(node.name + ' (' + node.id + ') is back ONLINE', 'ok');
+          }
+
+          NodeData.history[i].push({ time: now, status: node.status, latency: node.latency });
+          if (NodeData.history[i].length > 20) NodeData.history[i].shift();
+        });
+        render();
+        } catch(e) { console.error('Node update error:', e); }
+      }
+
+      render();
+      setInterval(update, 4000);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       FEDERATED LEARNING STATUS
+       ═══════════════════════════════════════════════════════ */
+    var FedData = {
+      state: {
+        round: 1, maxRounds: 50, activeNodes: 6, totalNodes: 8,
+        accuracy: 0.8234, privacyBudget: 3.0, progress: 0, logEntries: []
+      }
+    };
+
+    (function fedModule() {
+      var s = FedData.state;
+      var logEl = document.getElementById('fedLog');
+
+      function addLog(msg, type) {
+        var time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        s.logEntries.push({ time: time, msg: msg, type: type || 'ok' });
+        if (s.logEntries.length > 50) s.logEntries.shift();
+      }
+
+      addLog('System initialized \u2014 federated learning engine ready', 'ok');
+      addLog('Privacy budget set: \u03B5 = 3.00 (differential privacy)', 'ok');
+      addLog('Waiting for node check-in...', 'ok');
+
+      function renderLog() {
+        var html = '';
+        s.logEntries.forEach(function(entry) {
+          html += '<div class="fed-log-entry"><span class="time">[' + entry.time + ']</span> <span class="' + entry.type + '">' + entry.msg + '</span></div>';
+        });
+        logEl.innerHTML = html;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function render() {
+        document.getElementById('fedRound').textContent = s.round;
+        document.getElementById('fedRoundSub').textContent = 'of ' + s.maxRounds + ' target';
+        document.getElementById('fedNodes').textContent = s.activeNodes + ' / ' + s.totalNodes;
+        document.getElementById('fedNodesSub').textContent = s.activeNodes === s.totalNodes ? 'All nodes active' : (s.totalNodes - s.activeNodes) + ' node(s) syncing';
+        document.getElementById('fedAccuracy').textContent = (s.accuracy * 100).toFixed(2) + '%';
+        document.getElementById('fedAccuracySub').textContent = 'Global model F1';
+        document.getElementById('fedPrivacy').textContent = '\u03B5 ' + s.privacyBudget.toFixed(2);
+        document.getElementById('fedProgressPct').textContent = s.progress.toFixed(0) + '%';
+        document.getElementById('fedProgressFill').style.width = s.progress + '%';
+        var bar = document.getElementById('fedProgressBar');
+        if (bar) bar.setAttribute('aria-valuenow', Math.round(s.progress));
+        renderLog();
+      }
+
+      function update() {
+        try {
+        s.progress += Math.random() * 15 + 5;
+        if (s.progress >= 100) {
+          s.progress = 0;
+          s.round++;
+          if (s.round > s.maxRounds) s.round = 1;
+          s.accuracy += (Math.random() - 0.35) * 0.005;
+          s.accuracy = Math.max(0.75, Math.min(0.985, s.accuracy));
+          s.privacyBudget -= Math.random() * 0.03;
+          if (s.privacyBudget < 0.5) s.privacyBudget = 3.0;
+          var events = [
+            'Round ' + s.round + ' aggregation complete \u2014 accuracy ' + (s.accuracy * 100).toFixed(2) + '%',
+            'Model weights merged from ' + s.activeNodes + ' nodes',
+            'Privacy budget remaining: \u03B5 = ' + s.privacyBudget.toFixed(2),
+            'Gradient clipping applied \u2014 norm threshold 1.0',
+            'Secure aggregation verified \u2014 no raw data exchanged',
+          ];
+          addLog(events[Math.floor(Math.random() * events.length)], 'ok');
+          if (Math.random() < 0.2) {
+            s.activeNodes = Math.max(3, Math.min(s.totalNodes, s.activeNodes + (Math.random() > 0.5 ? 1 : -1)));
+            addLog('Node topology changed: ' + s.activeNodes + '/' + s.totalNodes + ' active', s.activeNodes < 5 ? 'warn' : 'ok');
+          }
+        } else if (Math.random() < 0.3) {
+          var msgs = [
+            'Local training epoch complete on node AGR-01',
+            'Gradient update received from node NET-01',
+            'Differential privacy noise injected (\u03C3=0.8)',
+            'Validating model checkpoint integrity...',
+            'Node HLTH-01 local loss: ' + (0.2 + Math.random() * 0.15).toFixed(4),
+            'Cross-validation split updated',
+          ];
+          addLog(msgs[Math.floor(Math.random() * msgs.length)], 'ok');
+        }
+        render();
+        } catch(e) { console.error('Fed update error:', e); }
+      }
+
+      render();
+      setInterval(update, 2000);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       SUMMARY METRICS
+       ═══════════════════════════════════════════════════════ */
+    (function summaryModule() {
+      var dataPoints = 142857;
+      var alerts = 1;
+
+      function update() {
+        try {
+        dataPoints += Math.floor(Math.random() * 50 + 10);
+        alerts = Math.max(0, alerts + (Math.random() < 0.15 ? 1 : Math.random() < 0.3 ? -1 : 0));
+        alerts = Math.min(alerts, 5);
+        document.getElementById('sumNodes').textContent = '8';
+        document.getElementById('sumUptime').textContent = (97 + Math.random() * 2.5).toFixed(1) + '%';
+        document.getElementById('sumData').textContent = dataPoints.toLocaleString();
+        document.getElementById('sumPrivacy').textContent = 'A+';
+        document.getElementById('sumAlerts').textContent = alerts;
+        } catch(e) { console.error('Summary update error:', e); }
+      }
+
+      update();
+      setInterval(update, 5000);
+    })();
+
+    /* ═══════════════════════════════════════════════════════
+       EXPORT CSV
+       ═══════════════════════════════════════════════════════ */
+    function exportDashboardCSV() {
+      var timestamp = new Date().toISOString();
+      var rows = ['Metric,Value,Timestamp'];
+      rows.push('Grid Efficiency,' + document.getElementById('gridEfficiency').textContent + ',' + timestamp);
+      rows.push('Grid Load,' + document.getElementById('gridLoad').textContent + ',' + timestamp);
+      rows.push('Grid Peak,' + document.getElementById('gridPeak').textContent + ',' + timestamp);
+      CropData.crops.forEach(function(c) {
+        rows.push(c.name + ' Yield,' + c.yield.toFixed(1) + ',' + timestamp);
+        rows.push(c.name + ' pH,' + c.pH.toFixed(2) + ',' + timestamp);
+        rows.push(c.name + ' Moisture,' + c.moisture.toFixed(0) + '%,' + timestamp);
+      });
+      NodeData.nodes.forEach(function(n) {
+        rows.push(n.name + ' Status,' + n.status + ',' + timestamp);
+        rows.push(n.name + ' Latency,' + n.latency + ' ms,' + timestamp);
+        rows.push(n.name + ' Uptime,' + n.uptime.toFixed(2) + '%,' + timestamp);
+      });
+      var s = FedData.state;
+      rows.push('Fed Round,' + s.round + '/' + s.maxRounds + ',' + timestamp);
+      rows.push('Fed Accuracy,' + (s.accuracy * 100).toFixed(2) + '%,' + timestamp);
+      rows.push('Fed Privacy Budget,e ' + s.privacyBudget.toFixed(2) + ',' + timestamp);
+
+      var csv = rows.join('\n');
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'dashboard-export-' + timestamp.slice(0, 19).replace(/:/g, '-') + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.show('Dashboard data exported as CSV', 'ok');
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       SERVICE WORKER REGISTRATION
+       ═══════════════════════════════════════════════════════ */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function() {});
+    }
+  </script>
+</body>
+</html>
